@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <title>Gallery</title>
+
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#000000" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: system-ui, sans-serif;
+    }
+
+    .app {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      overflow: hidden;
+      touch-action: pan-y;
+    }
+
+    .track {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.25s ease;
+    }
+
+    .slide {
+      min-width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+
+    .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      -webkit-user-drag: none;
+      background: #000;
+    }
+
+    .counter {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 10;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      transition: opacity 0.35s ease;
+    }
+
+    .hint.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-size: 22px;
+    }
+
+    .prev { left: 10px; }
+    .next { right: 10px; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="counter" id="counter">1 / 1</div>
+    <button class="nav prev" id="prevBtn">‹</button>
+    <button class="nav next" id="nextBtn">›</button>
+    <div class="hint" id="hint">좌우로 넘기기</div>
+    <div class="track" id="track"></div>
+  </div>
+
+  <script>
+    const images = [
+      "images/1.jpg",
+      "images/2.jpg",
+      "images/3.jpg",
+      "images/4.jpg",
+      "images/5.jpg"
+    ];
+
+    const app = document.getElementById("app");
+    const track = document.getElementById("track");
+    const counter = document.getElementById("counter");
+    const hint = document.getElementById("hint");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    let current = 0;
+    let startX = 0;
+    let currentX = 0;
+    let dragging = false;
+
+    function renderSlides() {
+      track.innerHTML = images.map((src, i) => `
+        <div class="slide">
+          <img src="${src}" alt="slide-${i + 1}" draggable="false" />
+        </div>
+      `).join("");
+      update(false);
+    }
+
+    function update(animated = true) {
+      track.style.transition = animated ? "transform 0.25s ease" : "none";
+      track.style.transform = `translateX(-${current * window.innerWidth}px)`;
+      counter.textContent = `${current + 1} / ${images.length}`;
+      prevBtn.style.display = current === 0 ? "none" : "block";
+      nextBtn.style.display = current === images.length - 1 ? "none" : "block";
+    }
+
+    function goTo(index) {
+      current = Math.max(0, Math.min(index, images.length - 1));
+      update(true);
+      hint.classList.add("hidden");
+    }
+
+    prevBtn.addEventListener("click", () => goTo(current - 1));
+    nextBtn.addEventListener("click", () => goTo(current + 1));
+
+    app.addEventListener("touchstart", (e) => {
+      dragging = true;
+      startX = e.touches[0].clientX;
+      currentX = startX;
+      track.style.transition = "none";
+    }, { passive: true });
+
+    app.addEventListener("touchmove", (e) => {
+      if (!dragging) return;
+      currentX = e.touches[0].clientX;
+      const delta = currentX - startX;
+      const offset = -current * window.innerWidth + delta;
+      track.style.transform = `translateX(${offset}px)`;
+    }, { passive: true });
+
+    app.addEventListener("touchend", () => {
+      if (!dragging) return;
+      const delta = currentX - startX;
+      dragging = false;
+
+      if (Math.abs(delta) > 60) {
+        if (delta < 0) goTo(current + 1);
+        else goTo(current - 1);
+      } else {
+        update(true);
+      }
+    });
+
+    window.addEventListener("resize", () => update(false));
+
+    renderSlides();
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          await navigator.serviceWorker.register("./sw.js");
+        } catch (e) {
+          console.log(e);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
