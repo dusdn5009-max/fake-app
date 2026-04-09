@@ -3,13 +3,13 @@ const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./images/1.jpg",
-  "./images/2.jpg",
-  "./images/3.jpg",
-  "./images/4.jpg",
-  "./images/5.jpg"
+  "./icons/icon1.png",
+  "./icons/icon2.png",
+  "./images/image1.jpg",
+  "./images/image2.jpg",
+  "./images/image3.jpg",
+  "./images/image4.jpg",
+  "./images/image5.jpg"
 ];
 
 self.addEventListener("install", (event) => {
